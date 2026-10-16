@@ -57,6 +57,7 @@ def main():
         results_dir=ROOT / "task1_svm" / "results",
         models_dir=ROOT / "task1_svm" / "models",
         metadata_dir=ROOT / "task1_svm" / "metadata",
+        accuracy_dir=ROOT / "accuracy",
         metadata={
             "script_path": Path(__file__),
             "dataset_paths": {

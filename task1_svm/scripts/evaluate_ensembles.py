@@ -44,6 +44,7 @@ def main():
     groups = np.tile(np.repeat(np.arange(5), 80), 2)
     oof = {name: np.empty_like(y) for name in build_models()}
     test_predictions = {}
+    fitted_models = {}
 
     for fold, (train_index, valid_index) in enumerate(GroupKFold(5).split(x, y, groups)):
         for name, model in build_models().items():
@@ -52,6 +53,7 @@ def main():
             if fold == 0:
                 full_model = build_models()[name]
                 full_model.fit(x, y)
+                fitted_models[name] = full_model
                 test_predictions[name] = full_model.predict(test)
 
     for name, prediction in oof.items():
@@ -80,10 +82,15 @@ def main():
             method="SVM",
             scheme_id=scheme_id,
             result=result,
-            model=None,
+            model={
+                "members": {member: fitted_models[member] for member in members},
+                "voting": "majority",
+                "tie_break_label": -1,
+            },
             results_dir=ROOT / "task1_svm" / "results",
             models_dir=ROOT / "task1_svm" / "models",
             metadata_dir=ROOT / "task1_svm" / "metadata",
+            accuracy_dir=ROOT / "accuracy",
             metadata={
                 "script_path": Path(__file__),
                 "dataset_paths": {

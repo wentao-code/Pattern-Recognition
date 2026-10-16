@@ -31,9 +31,11 @@ def next_iteration(
 ) -> int:
     if method not in _METHODS or scheme_id < 1:
         raise ValueError("method must be SVM or MLP and scheme_id must be positive")
-    pattern = re.compile(rf"^task_{method}_{scheme_id}_(\d+)(?:_labels)?\.[^.]+$", re.IGNORECASE)
+    pattern = re.compile(rf"^task_{method}_{scheme_id}_(\d+)(?:_.*)?\.[^.]+$", re.IGNORECASE)
     directories = tuple(
-        directory for directory in (results_dir, models_dir, metadata_dir) if directory is not None
+        directory
+        for directory in (results_dir, models_dir, metadata_dir)
+        if directory is not None
     )
     iterations = [
         int(match.group(1))
@@ -56,18 +58,46 @@ def _json_default(value: Any) -> Any:
     raise TypeError(f"Cannot serialize {type(value).__name__} to JSON")
 
 
+def read_accuracy_references(accuracy_dir: Path, result: np.ndarray) -> None:
+    suffix_pattern = re.compile(r"_([0-9]*\.[0-9]+)$")
+    for path in sorted(accuracy_dir.glob("*.txt")):
+        match = suffix_pattern.search(path.stem)
+        if not match:
+            continue
+        known_accuracy = float(match.group(1))
+        if not 0 <= known_accuracy <= 1:
+            continue
+        try:
+            reference = np.loadtxt(path, dtype=np.int64, ndmin=2)
+        except (OSError, ValueError):
+            continue
+        if reference.ndim != 2 or reference.shape != result.shape:
+            continue
+        if not np.array_equal(reference[:, 0], result[:, 0]):
+            continue
+
+        differences = int(np.count_nonzero(reference[:, 1] != result[:, 1]))
+        print(
+            f"Accuracy reference {path.name}: known accuracy={known_accuracy:.2%}; "
+            f"prediction differences={differences}/{result.shape[0]}"
+        )
+
+
 def save_run(
     method: str,
     scheme_id: int,
     result: np.ndarray,
-    model: Any | None,
+    model: Any,
     results_dir: Path,
     models_dir: Path,
     metadata_dir: Path,
+    accuracy_dir: Path,
     metadata: dict[str, Any],
 ) -> dict[str, Path]:
     if method not in _METHODS or scheme_id < 1:
         raise ValueError("method must be SVM or MLP and scheme_id must be positive")
+    if model is None:
+        raise ValueError("Every new training run must include a fitted model")
 
     result = np.asarray(result)
     if result.ndim != 2 or result.shape[1] != 2 or result.shape[0] == 0:
@@ -91,7 +121,6 @@ def save_run(
     results_dir.mkdir(parents=True, exist_ok=True)
     models_dir.mkdir(parents=True, exist_ok=True)
     metadata_dir.mkdir(parents=True, exist_ok=True)
-
     iteration = next_iteration(
         results_dir,
         method,
@@ -101,18 +130,14 @@ def save_run(
     )
     basename = f"task_{method}_{scheme_id}_{iteration}"
     result_path = results_dir / f"{basename}.txt"
-    model_path = models_dir / f"{basename}.joblib" if model is not None else None
+    model_path = models_dir / f"{basename}.joblib"
     metadata_path = metadata_dir / f"{basename}.json"
-    targets = [result_path, metadata_path]
-    if model_path is not None:
-        targets.append(model_path)
+    targets = [result_path, model_path, metadata_path]
     collisions = [path for path in targets if path.exists()]
     if collisions:
         raise FileExistsError(f"Refusing to overwrite: {', '.join(map(str, collisions))}")
 
-    np.savetxt(result_path, result.astype(np.int64), fmt="%d", delimiter=" ")
-    if model_path is not None:
-        joblib.dump(model, model_path)
+    read_accuracy_references(accuracy_dir, result)
 
     predicted_labels, counts = np.unique(result[:, 1].astype(int), return_counts=True)
     record = dict(metadata)
@@ -135,15 +160,28 @@ def save_run(
                 for label, count in zip(predicted_labels, counts)
             },
             "result_path": str(result_path),
-            "model_path": str(model_path) if model_path is not None else None,
+            "model_path": str(model_path),
             "metadata_path": str(metadata_path),
         }
     )
-    metadata_path.write_text(
-        json.dumps(record, ensure_ascii=False, indent=2, default=_json_default) + "\n",
-        encoding="utf-8",
-    )
+    created_paths: list[Path] = []
+    try:
+        with model_path.open("xb") as model_file:
+            created_paths.append(model_path)
+            joblib.dump(model, model_file)
+        with result_path.open("x", encoding="utf-8", newline="") as result_file:
+            created_paths.append(result_path)
+            np.savetxt(result_file, result.astype(np.int64), fmt="%d", delimiter=" ")
+        with metadata_path.open("x", encoding="utf-8", newline="\n") as metadata_file:
+            created_paths.append(metadata_path)
+            metadata_file.write(
+                json.dumps(record, ensure_ascii=False, indent=2, default=_json_default) + "\n"
+            )
+    except Exception:
+        for path in reversed(created_paths):
+            path.unlink(missing_ok=True)
+        raise
+
     saved = {"result": result_path, "metadata": metadata_path}
-    if model_path is not None:
-        saved["model"] = model_path
+    saved["model"] = model_path
     return saved

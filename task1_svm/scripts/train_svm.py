@@ -26,6 +26,7 @@ TEST_DIR = ROOT / "data" / "test"
 RESULTS_DIR = ROOT / "task1_svm" / "results"
 MODELS_DIR = ROOT / "task1_svm" / "models"
 METADATA_DIR = ROOT / "task1_svm" / "metadata"
+ACCURACY_DIR = ROOT / "accuracy"
 
 
 def make_contiguous_groups(labels, chunks=5):
@@ -102,6 +103,7 @@ def main():
         results_dir=RESULTS_DIR,
         models_dir=MODELS_DIR,
         metadata_dir=METADATA_DIR,
+        accuracy_dir=ACCURACY_DIR,
         metadata={
             "script_path": Path(__file__),
             "dataset_paths": {

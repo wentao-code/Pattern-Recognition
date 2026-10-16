@@ -101,10 +101,11 @@ def main():
             method="SVM",
             scheme_id=scheme_ids[name],
             result=output,
-            model=None,
+            model=best_models["block"].best_estimator_,
             results_dir=ROOT / "task1_svm" / "results",
             models_dir=ROOT / "task1_svm" / "models",
             metadata_dir=ROOT / "task1_svm" / "metadata",
+            accuracy_dir=ROOT / "accuracy",
             metadata={
                 "script_path": Path(__file__),
                 "dataset_paths": {
