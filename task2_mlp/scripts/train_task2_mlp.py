@@ -1,6 +1,6 @@
+import sys
 from pathlib import Path
 
-import joblib
 import numpy as np
 from scipy.io import loadmat
 from sklearn.model_selection import GridSearchCV, GroupKFold
@@ -9,9 +9,18 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-ROOT = Path(__file__).resolve().parent
-TRAIN_DIR = ROOT / "train(Task_2)"
-TEST_DIR = ROOT / "test(Task_2)"
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from common.experiment_tracking import save_run
+
+
+TRAIN_DIR = ROOT / "data" / "train"
+TEST_DIR = ROOT / "data" / "test"
+RESULTS_DIR = ROOT / "task2_mlp" / "results"
+MODELS_DIR = ROOT / "task2_mlp" / "models"
+METADATA_DIR = ROOT / "task2_mlp" / "metadata"
 
 
 def make_contiguous_groups(labels, n_splits=5):
@@ -77,10 +86,34 @@ def main():
 
     predictions = search.best_estimator_.predict(x_test).astype(int)
     result = np.column_stack((np.arange(1, predictions.size + 1), predictions))
-    result_path = ROOT / "task2_result.txt"
-    model_path = ROOT / "task2_mlp_model.joblib"
-    np.savetxt(result_path, result, fmt="%d", delimiter=" ")
-    joblib.dump(search.best_estimator_, model_path)
+    saved = save_run(
+        method="MLP",
+        scheme_id=1,
+        result=result,
+        model=search.best_estimator_,
+        results_dir=RESULTS_DIR,
+        models_dir=MODELS_DIR,
+        metadata_dir=METADATA_DIR,
+        metadata={
+            "script_path": Path(__file__),
+            "dataset_paths": {
+                "training_data": TRAIN_DIR / "train_data.mat",
+                "training_labels": TRAIN_DIR / "train_label.mat",
+                "test_data": TEST_DIR / "test_data.mat",
+            },
+            "model_family": "MLPClassifier with StandardScaler",
+            "training_sample_count": int(x_train.shape[0]),
+            "test_sample_count": int(x_test.shape[0]),
+            "best_parameters": search.best_params_,
+            "validation": {
+                "method": "5-fold GroupKFold over contiguous class groups",
+                "accuracy": float(search.best_score_),
+                "fold_standard_deviation": float(
+                    search.cv_results_["std_test_score"][search.best_index_]
+                ),
+            },
+        },
+    )
 
     best_index = search.best_index_
     counts = dict(zip(*np.unique(predictions, return_counts=True)))
@@ -93,7 +126,9 @@ def main():
     )
     print(f"Best parameters: {search.best_params_}")
     print(f"Predicted labels: {counts}")
-    print(f"Saved: {result_path.name}, {model_path.name}")
+    print(f"Saved result: {saved['result']}")
+    print(f"Saved model: {saved['model']}")
+    print(f"Saved metadata: {saved['metadata']}")
 
 
 if __name__ == "__main__":

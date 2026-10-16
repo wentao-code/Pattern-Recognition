@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,11 @@ from sklearn.svm import SVC
 from optimize_candidates import image_transform, hog_features
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from common.experiment_tracking import save_run
 
 
 def build_models():
@@ -31,9 +36,11 @@ def build_models():
 
 
 def main():
-    x = loadmat(ROOT / "train(Task_2)" / "train_data.mat")["train_data"]
-    y = loadmat(ROOT / "train(Task_2)" / "train_label.mat")["train_label"].ravel()
-    test = loadmat(ROOT / "test(Task_2)" / "test_data.mat")["test_data"]
+    train_dir = ROOT / "data" / "train"
+    test_dir = ROOT / "data" / "test"
+    x = loadmat(train_dir / "train_data.mat")["train_data"]
+    y = loadmat(train_dir / "train_label.mat")["train_label"].ravel()
+    test = loadmat(test_dir / "test_data.mat")["test_data"]
     groups = np.tile(np.repeat(np.arange(5), 80), 2)
     oof = {name: np.empty_like(y) for name in build_models()}
     test_predictions = {}
@@ -63,9 +70,40 @@ def main():
         test_stacked = np.stack([test_predictions[member] for member in members])
         test_vote = np.where(np.sum(test_stacked == 1, axis=0) > len(members) / 2, 1, -1)
         result = np.column_stack((np.arange(1, len(test) + 1), test_vote))
-        np.savetxt(ROOT / f"task1_result_{name}.txt", result, fmt="%d", delimiter=" ")
+        scheme_id = {
+            "hog_zscore": 16,
+            "hog_percentile": 15,
+            "raw_hog_zscore": 17,
+            "four_model_vote": 18,
+        }[name]
+        saved = save_run(
+            method="SVM",
+            scheme_id=scheme_id,
+            result=result,
+            model=None,
+            results_dir=ROOT / "task1_svm" / "results",
+            models_dir=ROOT / "task1_svm" / "models",
+            metadata_dir=ROOT / "task1_svm" / "metadata",
+            metadata={
+                "script_path": Path(__file__),
+                "dataset_paths": {
+                    "training_data": train_dir / "train_data.mat",
+                    "training_labels": train_dir / "train_label.mat",
+                    "test_data": test_dir / "test_data.mat",
+                },
+                "model_family": "majority-vote ensemble of SVM classifiers",
+                "members": members,
+                "training_sample_count": int(x.shape[0]),
+                "test_sample_count": int(test.shape[0]),
+                "validation": {
+                    "method": "5-fold GroupKFold out-of-fold predictions",
+                    "accuracy": accuracy,
+                },
+            },
+        )
         print(name, "block OOF accuracy", round(accuracy, 5),
-              "test counts", dict(zip(*np.unique(test_vote, return_counts=True))))
+              "test counts", dict(zip(*np.unique(test_vote, return_counts=True))),
+              "saved", saved["result"].name)
 
 
 if __name__ == "__main__":

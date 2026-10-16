@@ -1,0 +1,28 @@
+legacy_path,numbered_path,artifact_type,notes
+task1_result.txt,task1_svm/results/task_SVM_14_1.txt,result,Byte-identical duplicate alias of task1_result_hog_rbf.txt.
+task1_result_best_known.txt,task1_svm/results/task_SVM_1_1.txt,result,Byte-identical duplicate alias of task1_result_raw_pixel_rbf.txt.
+task1_result_raw_pixel_rbf.txt,task1_svm/results/task_SVM_1_1.txt,result,Canonical raw-pixel RBF result; paired with svm_model.joblib.
+task1_result_raw_pixel_linear.txt,task1_svm/results/task_SVM_2_1.txt,result,Raw-pixel linear SVM.
+task1_result_pixel_raw.txt,task1_svm/results/task_SVM_3_1.txt,result,Raw-pixel candidate pipeline.
+task1_result_pixel_demean.txt,task1_svm/results/task_SVM_4_1.txt,result,Per-image demeaned pixels.
+task1_result_pixel_zscore.txt,task1_svm/results/task_SVM_5_1.txt,result,Per-image z-score pixels.
+task1_result_pixel_percentile.txt,task1_svm/results/task_SVM_6_1.txt,result,Per-image percentile normalization.
+task1_result_pixel_local_contrast.txt,task1_svm/results/task_SVM_7_1.txt,result,Local-contrast pixel features.
+task1_result_hog_c3_o8.txt,task1_svm/results/task_SVM_8_1.txt,result,"HOG cell size 3, 8 orientations."
+task1_result_hog_c4_o8.txt,task1_svm/results/task_SVM_9_1.txt,result,"HOG cell size 4, 8 orientations."
+task1_result_hog_c4_o9.txt,task1_svm/results/task_SVM_10_1.txt,result,"HOG cell size 4, 9 orientations."
+task1_result_hog_c5_o8.txt,task1_svm/results/task_SVM_11_1.txt,result,"HOG cell size 5, 8 orientations."
+task1_result_hog_c5_o12.txt,task1_svm/results/task_SVM_12_1.txt,result,"HOG cell size 5, 12 orientations."
+task1_result_hog_c6_o8.txt,task1_svm/results/task_SVM_13_1.txt,result,"HOG cell size 6, 8 orientations."
+task1_result_hog_rbf.txt,task1_svm/results/task_SVM_14_1.txt,result,Canonical historical HOG/RBF output; exact parameters are unavailable.
+task1_result_hog_percentile.txt,task1_svm/results/task_SVM_15_1.txt,result,"HOG/pixel-percentile ensemble produced by evaluate_ensembles.py."
+task1_result_hog_zscore.txt,task1_svm/results/task_SVM_16_1.txt,result,"HOG/pixel-z-score ensemble produced by evaluate_ensembles.py."
+task1_result_raw_hog_zscore.txt,task1_svm/results/task_SVM_17_1.txt,result,Historical raw-pixel/HOG/z-score ensemble.
+task1_result_four_model_vote.txt,task1_svm/results/task_SVM_18_1.txt,result,Historical four-model majority vote.
+task1_result_optimized.txt,task1_svm/results/task_SVM_19_1.txt,result,Optimization details unavailable.
+task1_result_train_optimized.txt,task1_svm/results/task_SVM_20_1.txt,result,First grouped-CV optimization run.
+task1_result_train_optimized_round2.txt,task1_svm/results/task_SVM_21_1.txt,result,Grouped-CV search across pixel and HOG candidates.
+test_predictions.txt,task1_svm/results/task_SVM_14_1_labels.txt,labels,One-column labels match the historical HOG/RBF prediction snapshot.
+svm_model.joblib,task1_svm/models/task_SVM_1_1.joblib,model,Raw-pixel RBF SVM paired with task_SVM_1_1.txt.
+train_groupcv_model.joblib,task1_svm/models/task_SVM_20_1.joblib,model,Model from the first grouped-CV optimization run.
+train_optimized_round2_model.joblib,task1_svm/models/task_SVM_21_1.joblib,model,Model selected from the grouped-CV pixel/HOG candidate search.

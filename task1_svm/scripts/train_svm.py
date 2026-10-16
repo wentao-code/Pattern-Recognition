@@ -1,6 +1,6 @@
+import sys
 from pathlib import Path
 
-import joblib
 import numpy as np
 from scipy.io import loadmat
 from sklearn.model_selection import (
@@ -14,9 +14,18 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 
 
-ROOT = Path(__file__).resolve().parent
-TRAIN_DIR = ROOT / "train(Task_2)"
-TEST_DIR = ROOT / "test(Task_2)"
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from common.experiment_tracking import save_run
+
+
+TRAIN_DIR = ROOT / "data" / "train"
+TEST_DIR = ROOT / "data" / "test"
+RESULTS_DIR = ROOT / "task1_svm" / "results"
+MODELS_DIR = ROOT / "task1_svm" / "models"
+METADATA_DIR = ROOT / "task1_svm" / "metadata"
 
 
 def make_contiguous_groups(labels, chunks=5):
@@ -85,14 +94,35 @@ def main():
     # This raw-pixel candidate has the highest user-reported test score so far.
     predictions = search.best_estimator_.predict(x_test).astype(int)
     result = np.column_stack((np.arange(1, predictions.size + 1), predictions))
-    for filename in (
-        "task1_result.txt",
-        "task1_result_best_known.txt",
-        "task1_result_raw_pixel_rbf.txt",
-    ):
-        np.savetxt(ROOT / filename, result, fmt="%d", delimiter=" ")
-    np.savetxt(ROOT / "test_predictions.txt", predictions, fmt="%d")
-    joblib.dump(search.best_estimator_, ROOT / "svm_model.joblib")
+    saved = save_run(
+        method="SVM",
+        scheme_id=1,
+        result=result,
+        model=search.best_estimator_,
+        results_dir=RESULTS_DIR,
+        models_dir=MODELS_DIR,
+        metadata_dir=METADATA_DIR,
+        metadata={
+            "script_path": Path(__file__),
+            "dataset_paths": {
+                "training_data": TRAIN_DIR / "train_data.mat",
+                "training_labels": TRAIN_DIR / "train_label.mat",
+                "test_data": TEST_DIR / "test_data.mat",
+            },
+            "model_family": "SVC with RBF kernel",
+            "features": "19x19 raw pixels scaled to [-1, 1] with MinMaxScaler",
+            "training_sample_count": int(x_train.shape[0]),
+            "test_sample_count": int(x_test.shape[0]),
+            "best_parameters": search.best_params_,
+            "validation": {
+                "selection": "5-fold shuffled stratified CV",
+                "selection_accuracy": float(search.best_score_),
+                "grouped_cv": "5-fold contiguous-group CV",
+                "grouped_cv_mean_accuracy": float(grouped_scores.mean()),
+                "grouped_cv_std_accuracy": float(grouped_scores.std()),
+            },
+        },
+    )
 
     print(f"Training samples: {x_train.shape[0]}")
     print(f"Test samples: {x_test.shape[0]}")
@@ -104,10 +134,9 @@ def main():
         f"{grouped_scores.mean():.4%} +/- {grouped_scores.std():.4%}"
     )
     print(f"Predicted labels: {dict(zip(*np.unique(predictions, return_counts=True)))}")
-    print(
-        "Saved: task1_result.txt, task1_result_best_known.txt, "
-        "task1_result_raw_pixel_rbf.txt, test_predictions.txt, svm_model.joblib"
-    )
+    print(f"Saved result: {saved['result']}")
+    print(f"Saved model: {saved['model']}")
+    print(f"Saved metadata: {saved['metadata']}")
 
 
 if __name__ == "__main__":

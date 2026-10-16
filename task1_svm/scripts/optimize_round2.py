@@ -1,6 +1,6 @@
+import sys
 from pathlib import Path
 
-import joblib
 import numpy as np
 from scipy.io import loadmat
 from sklearn.model_selection import GridSearchCV, GroupKFold
@@ -12,11 +12,17 @@ from optimize_candidates import hog_features, image_transform
 from train_svm import make_contiguous_groups
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from common.experiment_tracking import save_run
+
+
 BASELINES = (
-    "task1_result_pixel_zscore.txt",
-    "task1_result_hog_c3_o8.txt",
-    "task1_result_raw_pixel_rbf.txt",
+    "task_SVM_5_1.txt",
+    "task_SVM_8_1.txt",
+    "task_SVM_1_1.txt",
 )
 
 
@@ -60,8 +66,8 @@ def candidates():
 
 
 def main():
-    train_dir = ROOT / "train(Task_2)"
-    test_dir = ROOT / "test(Task_2)"
+    train_dir = ROOT / "data" / "train"
+    test_dir = ROOT / "data" / "test"
     x_train = loadmat(train_dir / "train_data.mat")["train_data"]
     y_train = loadmat(train_dir / "train_label.mat")["train_label"].ravel()
     x_test = loadmat(test_dir / "test_data.mat")["test_data"]
@@ -86,20 +92,45 @@ def main():
     score, name, best_search = max(summaries, key=lambda item: item[0])
     predictions = best_search.best_estimator_.predict(x_test).astype(int)
     result = np.column_stack((np.arange(1, predictions.size + 1), predictions))
-    output = ROOT / "task1_result_train_optimized_round2.txt"
-    np.savetxt(output, result, fmt="%d", delimiter=" ")
-    model_path = ROOT / "train_optimized_round2_model.joblib"
-    joblib.dump(best_search.best_estimator_, model_path)
+    saved = save_run(
+        method="SVM",
+        scheme_id=21,
+        result=result,
+        model=best_search.best_estimator_,
+        results_dir=ROOT / "task1_svm" / "results",
+        models_dir=ROOT / "task1_svm" / "models",
+        metadata_dir=ROOT / "task1_svm" / "metadata",
+        metadata={
+            "script_path": Path(__file__),
+            "dataset_paths": {
+                "training_data": train_dir / "train_data.mat",
+                "training_labels": train_dir / "train_label.mat",
+                "test_data": test_dir / "test_data.mat",
+            },
+            "model_family": "SVC with RBF kernel selected from pixel and HOG candidates",
+            "selected_candidate": name,
+            "training_sample_count": int(x_train.shape[0]),
+            "test_sample_count": int(x_test.shape[0]),
+            "best_parameters": best_search.best_params_,
+            "validation": {
+                "method": "5-fold GroupKFold over contiguous class groups",
+                "accuracy": float(score),
+            },
+        },
+    )
 
     print(f"Selected: {name}; grouped CV accuracy={score:.4%}")
     print(f"Best parameters: {best_search.best_params_}")
     print(f"Prediction counts: {dict(zip(*np.unique(predictions, return_counts=True)))}")
     for filename in BASELINES:
-        baseline = np.loadtxt(ROOT / filename, dtype=int)
+        baseline_path = ROOT / "task1_svm" / "results" / filename
+        baseline = np.loadtxt(baseline_path, dtype=int)
         if baseline.shape != result.shape or not np.array_equal(result[:, 0], baseline[:, 0]):
             raise ValueError(f"Sample IDs or row count differ in {filename}")
         print(f"Different from {filename}: {int(np.count_nonzero(result[:, 1] != baseline[:, 1]))} samples")
-    print(f"Saved: {output.name}, {model_path.name}")
+    print(f"Saved result: {saved['result']}")
+    print(f"Saved model: {saved['model']}")
+    print(f"Saved metadata: {saved['metadata']}")
 
 
 if __name__ == "__main__":

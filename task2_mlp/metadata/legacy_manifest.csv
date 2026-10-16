@@ -1,0 +1,3 @@
+legacy_path,numbered_path,artifact_type,notes
+task2_result.txt,task2_mlp/results/task_MLP_1_1.txt,result,Existing MLP prediction snapshot; original run metadata unavailable.
+task2_mlp_model.joblib,task2_mlp/models/task_MLP_1_1.joblib,model,Existing MLP model paired with task_MLP_1_1.txt.

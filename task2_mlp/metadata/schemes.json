@@ -1,0 +1,7 @@
+{
+  "method": "MLP",
+  "policy": "Scheme IDs are stable. A changed feature pipeline or model family receives a new ID; repeat runs of the same scheme increment the iteration.",
+  "schemes": [
+    {"scheme_id": 1, "name": "standardized_mlp_groupcv", "description": "StandardScaler followed by an MLPClassifier selected with grouped five-fold cross-validation."}
+  ]
+}

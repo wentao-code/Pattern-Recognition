@@ -1,0 +1,27 @@
+{
+  "method": "SVM",
+  "policy": "Scheme IDs are stable. A changed feature pipeline or model family receives a new ID; repeat runs of the same scheme increment the iteration.",
+  "schemes": [
+    {"scheme_id": 1, "name": "raw_pixel_rbf", "description": "MinMax-scaled raw 19x19 pixels with RBF SVM."},
+    {"scheme_id": 2, "name": "raw_pixel_linear", "description": "Raw-pixel linear SVM; historical preprocessing details are unavailable."},
+    {"scheme_id": 3, "name": "pixel_raw", "description": "Raw-pixel feature pipeline from candidate search."},
+    {"scheme_id": 4, "name": "pixel_demean", "description": "Per-image demeaned pixels with SVM."},
+    {"scheme_id": 5, "name": "pixel_zscore", "description": "Per-image z-score pixels with SVM."},
+    {"scheme_id": 6, "name": "pixel_percentile", "description": "Per-image percentile-normalized pixels with SVM."},
+    {"scheme_id": 7, "name": "pixel_local_contrast", "description": "Local-contrast-normalized pixels with SVM."},
+    {"scheme_id": 8, "name": "hog_c3_o8", "description": "HOG descriptor with cell size 3 and 8 orientations."},
+    {"scheme_id": 9, "name": "hog_c4_o8", "description": "HOG descriptor with cell size 4 and 8 orientations."},
+    {"scheme_id": 10, "name": "hog_c4_o9", "description": "HOG descriptor with cell size 4 and 9 orientations."},
+    {"scheme_id": 11, "name": "hog_c5_o8", "description": "HOG descriptor with cell size 5 and 8 orientations."},
+    {"scheme_id": 12, "name": "hog_c5_o12", "description": "HOG descriptor with cell size 5 and 12 orientations."},
+    {"scheme_id": 13, "name": "hog_c6_o8", "description": "HOG descriptor with cell size 6 and 8 orientations."},
+    {"scheme_id": 14, "name": "hog_rbf_legacy", "description": "Historical HOG/RBF result; exact descriptor and training parameters are unavailable."},
+    {"scheme_id": 15, "name": "hog_pixel_percentile_ensemble", "description": "Majority vote between HOG cell-3/orientation-8 and pixel-percentile SVM predictions."},
+    {"scheme_id": 16, "name": "hog_pixel_zscore_ensemble", "description": "Majority vote between HOG cell-3/orientation-8 and pixel-z-score SVM predictions."},
+    {"scheme_id": 17, "name": "raw_hog_zscore_ensemble", "description": "Historical ensemble combining raw pixels, HOG, and pixel z-score predictions."},
+    {"scheme_id": 18, "name": "four_model_vote", "description": "Historical four-model majority vote."},
+    {"scheme_id": 19, "name": "optimized_legacy_unknown", "description": "Historical optimized result; exact candidate-selection method is unavailable."},
+    {"scheme_id": 20, "name": "grouped_cv_raw_pixel_svm", "description": "Raw-pixel RBF SVM selected by grouped five-fold cross-validation."},
+    {"scheme_id": 21, "name": "grouped_cv_feature_search", "description": "Grouped five-fold search across pixel transforms and HOG feature configurations."}
+  ]
+}
