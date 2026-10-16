@@ -104,4 +104,4 @@
 - [x] Parse all moved Python scripts with `ast.parse` without running model training.
 - [x] Inspect manifests and registry JSON; confirm every historical file maps to a destination and next IDs are 2 for SVM schemes 1, 20, and 21 and MLP scheme 1.
 - [x] Mirror the organized project to the local non-Git directory while leaving `.idea`, `__pycache__`, and temporary editor files in place.
-- [ ] Confirm the repository diff contains only the planned changes, commit the implementation, and push `main` to `origin`.
+- [x] Confirm the repository diff contains only the planned changes, commit the implementation, and push `main` to `origin`.
